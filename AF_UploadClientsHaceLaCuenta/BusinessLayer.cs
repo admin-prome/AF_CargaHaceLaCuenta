@@ -1,13 +1,6 @@
 ﻿using CtaDNI_Premios_CargaDeTabla.DAL;
 using CtaDNI_Premios_CargaDeTabla.GFService;
 using CtaDNI_Premios_CargaDeTabla.Model;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AF_UploadClientsHaceLaCuenta
 {
@@ -24,12 +17,11 @@ namespace AF_UploadClientsHaceLaCuenta
 
         public void GenerarRegistrosEnTablaDestino(List<Entry> entries)
         {
-
             foreach (Entry ent in entries)
             {
                 try
                 {
-                    DatosCliente datosCliente = ObtenerDatosCliente(ent, configuration);
+                    DatosCliente datosCliente = ObtenerDatosCliente(ent);
 
                     //impacto en la tabla destino
                     dal.InsertarRegistro(ent, datosCliente);
@@ -42,24 +34,23 @@ namespace AF_UploadClientsHaceLaCuenta
             }
         }
 
-        private DatosCliente ObtenerDatosCliente(Entry ent, IConfiguration configuration)
+        private DatosCliente ObtenerDatosCliente(Entry ent)
         {
             DatosCliente datosCliente = new DatosCliente();
             //obtener CUIT
-            datosCliente.CUIT = dal.ObtenerCUIT(ent._24, configuration);
+            datosCliente.CUIT = dal.ObtenerCUIT(ent._24);
             //obtengo su cbu
-            datosCliente.CBU = dal.ObtenerCBU(ent._24, configuration);
+            datosCliente.CBU = dal.ObtenerCBU(ent._24);
             //obtengo su fecha de última acreditación BIP
-            datosCliente.fechaUltAcreditacionBIP = dal.ObtenerFechaAcreditacion(datosCliente.CUIT, configuration);
+            datosCliente.fechaUltAcreditacionBIP = dal.ObtenerFechaAcreditacion(datosCliente.CUIT);
 
             //Información del Ejecutivo
 
             //Nombre completo
-            string fullNameCliente = ent._1 + " " + ent._7;
-            string nombreCompletoEjecutivo = dal.ObtenerNombreCompletoEjecutivo(configuration, fullNameCliente);
-
+            datosCliente.EjecutivoAsociado = dal.ObtenerNombreCompletoEjecutivo(ent._24);
             //Branch
-            string branchEjecutivo = dal.ObtenerBranchEjecutivo(configuration, ent._24);
+            datosCliente.BranchEjecutivo = dal.ObtenerBranchEjecutivo(ent._24);
+     
 
             return datosCliente;
         }

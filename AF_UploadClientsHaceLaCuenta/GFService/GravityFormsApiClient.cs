@@ -1,63 +1,77 @@
 ﻿using CtaDNI_Premios_CargaDeTabla.Model;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
+using Newtonsoft.Json;
+using RestSharp;
+using RestSharp.Authenticators;
 
 namespace CtaDNI_Premios_CargaDeTabla.GFService
 {
     public class GravityFormsApiClient
     {
-        private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://provinciamicrocreditos.com/wp-json/gf/v2/";
+        private readonly IRestClient _restClient;
+        private const string baseUrl = "https://www.provinciamicrocreditos.com.ar/wp-json/gf/v2/";
         private string apiKey;
         private string apiSecret;
-        
-
-
-        public GravityFormsApiClient()
+        private readonly ILogger _logger;
+        public GravityFormsApiClient(ILogger logger)
         {
+            _logger = logger;
             this.apiKey = Environment.GetEnvironmentVariable("ApiKey")!;
             this.apiSecret = Environment.GetEnvironmentVariable("ApiSecret")!;
-            _httpClient = new HttpClient();
-            _httpClient.BaseAddress = new Uri(BaseUrl);
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            //Set up options for OAuth1.
+            var restClientOptions = new RestClientOptions(baseUrl)
+            {
+                Authenticator = new OAuth1Authenticator()
+                {
+                    ConsumerKey=apiKey,
+                    ConsumerSecret=apiSecret
+                }
+            };
+
+            _restClient = new RestClient(restClientOptions);
         }
 
         public async Task<GFFormModel> GetFormEntries(int formId)
         {
-            string requestUrl = $"forms/{formId}/entries";
-            string authToken = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{this.apiKey}:{this.apiSecret}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
+            string entriesEndpoint = $"forms/{formId}/entries";
+            DateTime now = DateTime.Now;
+            DateTime endDate = now;
+            DateTime startDate = now.AddHours(-24);
+            string startDateFormat = startDate.ToString("yyyy-MM-ddTHH:mm:ss");
+            string endDateFormat = endDate.ToString("yyyy-MM-ddTHH:mm:ss");
 
-            HttpResponseMessage response = await _httpClient.GetAsync(requestUrl);
+            var request = new RestRequest(entriesEndpoint, Method.Get);
+            // Add parameter to get the entries from the last 24 hours.
+            request.AddParameter("search", $"{{\"start_date\":\"{startDateFormat}\", \"end_date\":\"{endDateFormat}\"}}");
+            _logger.LogInformation(_restClient.BuildUri(request).ToString());
 
-            response.EnsureSuccessStatusCode();
-            
-            string responseBody = await response.Content.ReadAsStringAsync();
-            GFFormModel gFFormModelResponse = ObtenerFGGormModelResponse(responseBody);
-            
-            /**/
-            DateTime twentyFourHoursAgo = DateTime.UtcNow.AddHours(-24);
-            gFFormModelResponse.entries = gFFormModelResponse.entries
-                .Where(entry => DateTime.Parse(entry.date_created) > twentyFourHoursAgo)
-                .ToList();
-            
-            return gFFormModelResponse;
+            //Execute Request.
+            RestResponse response =await _restClient.ExecuteAsync(request);
+
+            if (response.IsSuccessful)
+            {
+                string responseBody = response.Content!;
+                _logger.LogInformation("Request successful.");
+                GFFormModel gFFormModelResponse = ObtenerFGGormModelResponse(responseBody);
+                return gFFormModelResponse;
+            }
+            else
+            {
+                throw new Exception($"Request failed with status code: {response.StatusCode}");
+            }
         }
-
         private GFFormModel ObtenerFGGormModelResponse(string responseBody)
         {
-           
-             JObject responseObject = JObject.Parse(responseBody);
+            JObject responseObject = JObject.Parse(responseBody);
             var entries = responseObject["entries"];
             GFFormModel formModelResponse = new GFFormModel();
-            foreach(var entry in entries) 
+            _logger.LogInformation("Reading Response...");
+            foreach (var entry in entries)
             {
-
                 var entryString = JsonConvert.SerializeObject(entry, Formatting.Indented);
                 JObject entryJOBject = JObject.Parse(entryString);
-                
+
                 Entry entryRecord = new Entry();
                 entryRecord.id= entryJOBject["id"].ToString();
                 entryRecord._1 = entryJOBject["1"].ToString();
@@ -73,9 +87,8 @@ namespace CtaDNI_Premios_CargaDeTabla.GFService
                 entryRecord._97= entryJOBject["97"].ToString();
                 entryRecord.date_created = entryJOBject["date_created"].ToString();
                 formModelResponse.entries.Add(entryRecord);
-              }
-            
-             
+            }
+
             return formModelResponse;
         }
     }

@@ -20,14 +20,12 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
         }
         public void InsertarRegistro(Entry ent, DatosCliente datosCliente)
         {
-            using (SqlConnection connection = new SqlConnection(this._configuration.GetConnectionString("DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
             {
                 SqlCommand command = new SqlCommand("InsertCuentaDNIPremios", connection);
                 connection.Open();
                 command.CommandType = CommandType.StoredProcedure;
-
                 // Add parameters and set their values
-                
                  command.Parameters.AddWithValue("@Nombre", ent._1);
                  command.Parameters.AddWithValue("@Apellido", ent._7);
                  command.Parameters.AddWithValue("@DNI", ent._24);
@@ -48,8 +46,8 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
                 command.Parameters.AddWithValue("@AnalisisFinanzasAdm", "Pendiente");
                 command.Parameters.AddWithValue("@PagoRealizado", "No");
                 command.Parameters.AddWithValue("@ImporteATransferir", "");
-                command.Parameters.AddWithValue("@EjecutivoComercial", "");
-                command.Parameters.AddWithValue("@SucursalEjecutivoComercial", "");
+                command.Parameters.AddWithValue("@EjecutivoComercial", datosCliente.EjecutivoAsociado);
+                command.Parameters.AddWithValue("@SucursalEjecutivoComercial", datosCliente.BranchEjecutivo);
                 //Agregar las de ejecutivo
 
                 //Quitar observaciones
@@ -61,11 +59,11 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
 
       
 
-        public string ObtenerCBU(string dni, IConfiguration configuration)
+        public string ObtenerCBU(string dni)
         {
             string cbu = String.Empty;
             
-            using (SqlConnection connection = new SqlConnection(configuration.GetConnectionString("DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
             {
                 connection.Open();
                 SqlCommand command = new SqlCommand("GetCBUByDNI", connection);
@@ -90,10 +88,10 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
             
         }
 
-        public string ObtenerFechaAcreditacion(string cuit, IConfiguration configuration)
+        public string ObtenerFechaAcreditacion(string cuit)
         {
             string date = String.Empty;
-            using (SqlConnection connection = new SqlConnection(configuration.GetConnectionString("DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
             {
                 connection.Open();
                 SqlCommand command = new SqlCommand("GetUltLiqBIPPorCUIT", connection);
@@ -103,7 +101,7 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
                 // Add parameters and set their values
 
                 command.Parameters.AddWithValue("@CUIT", cuit);
-                
+
 
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
@@ -119,15 +117,30 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
             
         }
 
-        internal string ObtenerBranchEjecutivo(IConfiguration configuration, string nombreEjecutivo)
+        internal string ObtenerBranchEjecutivo(string dni)
         {
-            return String.Empty;
-        }
+            string branch = "";
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("SP_getExecutiveBranchAssociatedToDni", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@DNIs", dni);
 
-        internal string ObtenerCUIT(string dni, IConfiguration configuration)
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        branch= reader.GetString(0);
+                    }
+                }
+            }
+            return branch; 
+        }
+        internal string ObtenerCUIT(string dni)
         {
             string cuit = String.Empty;
-            using (SqlConnection connection = new SqlConnection(configuration.GetConnectionString("DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
             {
                 connection.Open();
                 SqlCommand command = new SqlCommand("GetCUITByDNI", connection);
@@ -153,11 +166,29 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
             return cuit;
         }
 
-        internal string ObtenerNombreCompletoEjecutivo(IConfiguration configuration, string _24)
+        internal string ObtenerNombreCompletoEjecutivo(string dni)
         {
-            String nombreCompletoEjecutivo = String.Empty;
-            return nombreCompletoEjecutivo;
-          
+            string fullName = "";
+
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
+            {
+                connection.Open();
+
+                SqlCommand command = new SqlCommand("SP_getExecutiveAssociatedToDni", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@DNIs", dni);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        fullName = reader.GetString(0); 
+                    }
+                }
+            }
+
+            return fullName;
+
         }
     }
 }

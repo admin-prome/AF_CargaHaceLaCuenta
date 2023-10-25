@@ -1,9 +1,9 @@
-using System;
 using CtaDNI_Premios_CargaDeTabla.DAL;
 using CtaDNI_Premios_CargaDeTabla.GFService;
 using CtaDNI_Premios_CargaDeTabla.Model;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
 namespace AF_UploadClientsHaceLaCuenta
@@ -12,41 +12,39 @@ namespace AF_UploadClientsHaceLaCuenta
     {
         private readonly ILogger _logger;
 
-        public AF_UploadClientsHaceLaCuenta(ILoggerFactory loggerFactory)
+        public AF_UploadClientsHaceLaCuenta(ILogger<AF_UploadClientsHaceLaCuenta> logger)
         {
-            _logger = loggerFactory.CreateLogger<AF_UploadClientsHaceLaCuenta>();
+            _logger = logger;
          
         }
 
         [Function("AF_UploadClientsHaceLaCuenta")]
-        public void Run([TimerTrigger("0 0 0 */1 * *")] MyInfo myTimer)
+        public void Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestData req)
         {
             RunAsync().Wait();
         }
 
-        public async Task RunAsync()
+        public async Task<ActionResult> RunAsync()
         {
             try
-            {
-                
+            { 
                 DAL dAL = new DAL();
-                GravityFormsApiClient _gravityFormsApiClient = new GravityFormsApiClient();
+                GravityFormsApiClient _gravityFormsApiClient = new GravityFormsApiClient(_logger);
                 BusinessLayer businessLayer = new BusinessLayer(dAL, _gravityFormsApiClient);
                 GFFormModel registros = await businessLayer.ObtenerRegistros();
                 businessLayer.GenerarRegistrosEnTablaDestino(registros.entries);
 
-                Console.WriteLine("Fin del programa");
-                Console.ReadLine();
+                return new OkObjectResult("Function executed successfully");
             }
             catch (Exception e)
             {
-                Console.WriteLine("El programa finalizó con una excepción" + e.Message);
-                Console.ReadLine();
+                _logger.LogError($"Function failed with exception: {e.Message}");
+                return new BadRequestObjectResult($"Function failed with exception: {e.Message}");
             }
         }
     }
 
-
+    
 
     public class MyInfo
     {
