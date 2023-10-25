@@ -19,7 +19,7 @@ namespace AF_UploadClientsHaceLaCuenta
         }
 
         [Function("AF_UploadClientsHaceLaCuenta")]
-        public void Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestData req)
+        public void Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req)
         {
             RunAsync().Wait();
         }
