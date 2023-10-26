@@ -18,14 +18,9 @@ namespace AF_UploadClientsHaceLaCuenta
          
         }
 
-        [Function("AF_UploadClientsHaceLaCuenta")]
-        public void Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req)
-        {
-            RunAsync().Wait();
-        }
-
-        public async Task<ActionResult> RunAsync()
-        {
+      [Function("AF_UploadClientsHaceLaCuenta")]
+       public async Task<ActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req)
+       {
             try
             { 
                 DAL dAL = new DAL();
