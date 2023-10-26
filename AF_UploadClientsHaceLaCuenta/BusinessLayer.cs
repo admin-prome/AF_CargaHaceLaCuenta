@@ -1,6 +1,7 @@
 ﻿using CtaDNI_Premios_CargaDeTabla.DAL;
 using CtaDNI_Premios_CargaDeTabla.GFService;
 using CtaDNI_Premios_CargaDeTabla.Model;
+using Microsoft.Extensions.Logging;
 
 namespace AF_UploadClientsHaceLaCuenta
 {
@@ -8,9 +9,10 @@ namespace AF_UploadClientsHaceLaCuenta
     {
         private GravityFormsApiClient _gravityFormsApiClient;
         private DAL dal;
-
-        public BusinessLayer(DAL dAL, GravityFormsApiClient gravityFormsApiClient)
+        private readonly ILogger _logger;
+        public BusinessLayer(DAL dAL, GravityFormsApiClient gravityFormsApiClient, ILogger logger)
         {
+            _logger = logger;
             _gravityFormsApiClient = gravityFormsApiClient;
             dal = dAL;
         }
@@ -21,14 +23,16 @@ namespace AF_UploadClientsHaceLaCuenta
             {
                 try
                 {
+                    _logger.LogInformation("Registro: "+ ent.id);
                     DatosCliente datosCliente = ObtenerDatosCliente(ent);
 
                     //impacto en la tabla destino
                     dal.InsertarRegistro(ent, datosCliente);
+                    _logger.LogInformation("Registro Insertado");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Hubo un problema y no se insertó el registro " + ent.id + " " + e.Message);
+                    _logger.LogInformation("Hubo un problema y no se insertó el registro " + ent.id + " " + e.Message);
                 }
 
             }

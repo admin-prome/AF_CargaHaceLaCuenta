@@ -25,7 +25,7 @@ namespace AF_UploadClientsHaceLaCuenta
             { 
                 DAL dAL = new DAL();
                 GravityFormsApiClient _gravityFormsApiClient = new GravityFormsApiClient(_logger);
-                BusinessLayer businessLayer = new BusinessLayer(dAL, _gravityFormsApiClient);
+                BusinessLayer businessLayer = new BusinessLayer(dAL, _gravityFormsApiClient,_logger);
                 GFFormModel registros = await businessLayer.ObtenerRegistros();
                 businessLayer.GenerarRegistrosEnTablaDestino(registros.entries);
 
