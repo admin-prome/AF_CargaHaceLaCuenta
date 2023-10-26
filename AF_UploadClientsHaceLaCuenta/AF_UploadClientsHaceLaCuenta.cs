@@ -27,9 +27,9 @@ namespace AF_UploadClientsHaceLaCuenta
                 GravityFormsApiClient _gravityFormsApiClient = new GravityFormsApiClient(_logger);
                 BusinessLayer businessLayer = new BusinessLayer(dAL, _gravityFormsApiClient,_logger);
                 GFFormModel registros = await businessLayer.ObtenerRegistros();
-                businessLayer.GenerarRegistrosEnTablaDestino(registros.entries);
+                var result=businessLayer.GenerarRegistrosEnTablaDestino(registros.entries);
 
-                return new OkObjectResult("Function executed successfully");
+                return new OkObjectResult(result);
             }
             catch (Exception e)
             {

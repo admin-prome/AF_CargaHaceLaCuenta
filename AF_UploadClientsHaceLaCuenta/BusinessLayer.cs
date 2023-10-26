@@ -1,4 +1,5 @@
-﻿using CtaDNI_Premios_CargaDeTabla.DAL;
+﻿using AF_UploadClientsHaceLaCuenta.Model;
+using CtaDNI_Premios_CargaDeTabla.DAL;
 using CtaDNI_Premios_CargaDeTabla.GFService;
 using CtaDNI_Premios_CargaDeTabla.Model;
 using Microsoft.Extensions.Logging;
@@ -17,10 +18,14 @@ namespace AF_UploadClientsHaceLaCuenta
             dal = dAL;
         }
 
-        public void GenerarRegistrosEnTablaDestino(List<Entry> entries)
+        public EntriesProcessingResult GenerarRegistrosEnTablaDestino(List<Entry> entries)
         {
+            EntriesProcessingResult entriesProcessingResult = new EntriesProcessingResult();
+            entriesProcessingResult.TotalEntries = entries.Count;
+            int insertedEntries = 0;
             foreach (Entry ent in entries)
             {
+                ProcessedEntry processedEntry = new ProcessedEntry() { Id = ent.id };
                 try
                 {
                     _logger.LogInformation("Registro: "+ ent.id);
@@ -28,14 +33,19 @@ namespace AF_UploadClientsHaceLaCuenta
 
                     //impacto en la tabla destino
                     dal.InsertarRegistro(ent, datosCliente);
+                    insertedEntries++;
+                    processedEntry.Inserted = true;
                     _logger.LogInformation("Registro Insertado");
                 }
                 catch (Exception e)
                 {
+                    processedEntry.Inserted = false;
                     _logger.LogInformation("Hubo un problema y no se insertó el registro " + ent.id + " " + e.Message);
                 }
-
+                entriesProcessingResult.ProcessedEntries.Add(processedEntry);
             }
+            entriesProcessingResult.InsertedEntries = insertedEntries;
+            return entriesProcessingResult;
         }
 
         private DatosCliente ObtenerDatosCliente(Entry ent)
