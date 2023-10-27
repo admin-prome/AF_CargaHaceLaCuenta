@@ -34,13 +34,17 @@ namespace CtaDNI_Premios_CargaDeTabla.GFService
 
         public async Task<GFFormModel> GetFormEntries(int formId)
         {
+            // Define the API endpoint for retrieving form entries.
             string entriesEndpoint = $"forms/{formId}/entries";
+
+            // Calculate the start and end dates for the request (last 24 hours).
             DateTime now = DateTime.Now;
             DateTime endDate = now;
             DateTime startDate = now.AddHours(-24);
             string startDateFormat = startDate.ToString("yyyy-MM-ddTHH:mm:ss");
             string endDateFormat = endDate.ToString("yyyy-MM-ddTHH:mm:ss");
 
+            // Create a new REST request to retrieve form entries.
             var request = new RestRequest(entriesEndpoint, Method.Get);
             // Add parameter to get the entries from the last 24 hours.
             request.AddParameter("search", $"{{\"start_date\":\"{startDateFormat}\", \"end_date\":\"{endDateFormat}\"}}");
