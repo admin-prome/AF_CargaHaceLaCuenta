@@ -5,6 +5,7 @@ using CtaDNI_Premios_CargaDeTabla.Model;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace AF_UploadClientsHaceLaCuenta
@@ -107,7 +108,9 @@ namespace AF_UploadClientsHaceLaCuenta
 
         internal async Task<GFFormModel> ObtenerRegistros()
         {
-            GFFormModel entries = await _gravityFormsApiClient.GetFormEntries(45);
+            string formId = Environment.GetEnvironmentVariable("FormId")!;
+            GFFormModel entries = await _gravityFormsApiClient.GetFormEntries(int.Parse(formId));
+            entries.total_count = entries.total_count;
             _logger.LogInformation("Se recuperaron " + entries.entries.Count + " registros desde la API de Gravity Forms.");
             return entries;
         }
