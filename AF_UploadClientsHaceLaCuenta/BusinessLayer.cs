@@ -68,20 +68,24 @@ namespace AF_UploadClientsHaceLaCuenta
         {
             try
             {
-            _logger.LogInformation("Obteniendo datos del cliente para el registro " + ent.id);
-            DatosCliente datosCliente = new DatosCliente();
+                _logger.LogInformation("Obteniendo datos del cliente para el registro " + ent.id);
+                DatosCliente datosCliente = new DatosCliente();
 
-            // Obtener datos del cliente desde el DAL
-            datosCliente.CUIT = dal.ObtenerCUIT(ent._24);
-            datosCliente.CBU = dal.ObtenerCBU(ent._24);
-            datosCliente.fechaUltAcreditacionBIP = dal.ObtenerFechaAcreditacion(datosCliente.CUIT);
-            datosCliente.EjecutivoAsociado = dal.ObtenerNombreCompletoEjecutivo(ent._24);
-            datosCliente.BranchEjecutivo = dal.ObtenerBranchEjecutivo(ent._24);
+                // Obtener datos del cliente desde el DAL
+                datosCliente.CUIT = dal.ObtenerCUIT(ent._24);
 
-            _logger.LogInformation("Datos del cliente obtenidos para el registro " + ent.id);
+                // Prepend a '0' to match Banco Provincia's DNI format
+                string formattedDni = "0" + ent._24.ToString();
+                datosCliente.CBU = dal.ObtenerCBU(formattedDni);
+                datosCliente.fechaUltAcreditacionBIP = dal.ObtenerFechaAcreditacion(datosCliente.CUIT);
+                datosCliente.EjecutivoAsociado = dal.ObtenerNombreCompletoEjecutivo(ent._24);
+                datosCliente.BranchEjecutivo = dal.ObtenerBranchEjecutivo(ent._24);
+
+                _logger.LogInformation("Datos del cliente obtenidos para el registro " + ent.id);
                 return datosCliente;
             }
-            catch(Exception e) {
+            catch (Exception e)
+            {
                 _logger.LogInformation("Error obteniendo datos del cliente  para el registro " + ent.id + " "+e.Message);
                 return null;
             }
