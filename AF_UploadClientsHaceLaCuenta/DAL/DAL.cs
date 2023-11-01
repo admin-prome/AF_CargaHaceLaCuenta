@@ -120,11 +120,20 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
         internal string ObtenerBranchEjecutivo(string dni)
         {
             string branch = "";
-            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroOP")))
             {
                 connection.Open();
-                SqlCommand command = new SqlCommand("SP_getExecutiveBranchAssociatedToDni", connection);
-                command.CommandType = CommandType.StoredProcedure;
+                string sqlQuery = @"
+            SELECT MAX(crm.TeamBase.Name) AS comercialExecutive
+            FROM [crm].[pnet_CreditBase] AS CreditB
+            INNER JOIN [crm].[OpportunityBase] AS OP ON CreditB.pnet_OpportunityNumber = OP.Name
+            INNER JOIN [crm].[ContactBase] AS ContacB ON CreditB.pnet_ContactId = ContacB.ContactId
+            INNER JOIN crm.SystemUserBase ON pnet_commercialexecutiveadminid = SystemUserId
+            INNER JOIN crm.TeamBase ON crm.SystemUserBase.pnet_Subsidiary = crm.TeamBase.TeamId
+            WHERE pnet_BPBA_DocumentNumber = @DNIs
+            GROUP BY pnet_BPBA_DocumentNumber";
+
+                SqlCommand command = new SqlCommand(sqlQuery, connection);
                 command.Parameters.AddWithValue("@DNIs", dni);
 
                 using (SqlDataReader reader = command.ExecuteReader())
@@ -170,19 +179,28 @@ namespace CtaDNI_Premios_CargaDeTabla.DAL
         {
             string fullName = "";
 
-            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroDesa")))
+            using (SqlConnection connection = new SqlConnection(Environment.GetEnvironmentVariable("ConnectionStrings:DW2.ProvMicroOP")))
             {
                 connection.Open();
 
-                SqlCommand command = new SqlCommand("SP_getExecutiveAssociatedToDni", connection);
-                command.CommandType = CommandType.StoredProcedure;
+
+                string sqlQuery = @"
+    SELECT MAX(crm.SystemUserBase.FullName) AS comercialExecutive
+    FROM [crm].[pnet_CreditBase] AS CreditB
+    INNER JOIN [crm].[OpportunityBase] AS OP ON CreditB.pnet_OpportunityNumber = OP.Name
+    INNER JOIN [crm].[ContactBase] AS ContacB ON CreditB.pnet_ContactId = ContacB.ContactId
+    INNER JOIN crm.SystemUserBase ON pnet_commercialexecutiveadminid = SystemUserId
+    INNER JOIN crm.TeamBase ON crm.SystemUserBase.pnet_Subsidiary = crm.TeamBase.TeamId
+    WHERE pnet_BPBA_DocumentNumber = @DNIs
+    GROUP BY pnet_BPBA_DocumentNumber";
+                SqlCommand command= new SqlCommand(sqlQuery,connection);
                 command.Parameters.AddWithValue("@DNIs", dni);
 
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        fullName = reader.GetString(0); 
+                        fullName = reader.GetString(0);
                     }
                 }
             }
